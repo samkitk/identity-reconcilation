@@ -1,0 +1,24 @@
+{
+  "name": "identity-reconcilation",
+  "version": "1.0.0",
+  "description": "Idenity Reconcilation Service for Shopify Checkout",
+  "main": "src/app.ts",
+  "author": "Samkit <28357583+samkitk@users.noreply.github.com>",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^20.2.5",
+    "typescript": "^5.1.3"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node -r dotenv/config ./lib/app.js",
+    "prepare": "husky install",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "dev": "tsc-watch --noClear --onSuccess \"node -r dotenv/config lib/app.js\"",
+    "precommit": "yarn format",
+    "deploy": "yarn pm2 start \"yarn start\" --name api --watch",
+    "hard-reload": "yarn hard-stop && yarn deploy",
+    "hard-stop": "yarn pm2 stop api && yarn pm2 delete api"
+  }
+}
