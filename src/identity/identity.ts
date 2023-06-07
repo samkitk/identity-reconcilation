@@ -2,35 +2,30 @@ import { Contact, LinkPrecedence } from "@prisma/client";
 import { prisma } from "../helpers/prisma";
 import { ContactResponseBody } from "../helpers/interfaces";
 import { logger } from "../helpers/winston";
-import { time } from "console";
 
 export async function createNewContact(email?: string, phoneNumber?: string) {
   let newContact: Contact | null = null;
-  if (email && phoneNumber) {
-    newContact = await prisma.contact.create({
-      data: {
-        email: email,
-        phoneNumber: phoneNumber,
-        linkPrecedence: LinkPrecedence.PRIMARY,
-      },
-    });
-  } else if (email) {
-    newContact = await prisma.contact.create({
-      data: {
-        email: email,
-        linkPrecedence: LinkPrecedence.PRIMARY,
-      },
-    });
-  } else if (phoneNumber) {
-    newContact = await prisma.contact.create({
-      data: {
-        phoneNumber: phoneNumber,
-        linkPrecedence: LinkPrecedence.PRIMARY,
-      },
-    });
+
+  const data: {
+    email?: string;
+    phoneNumber?: string;
+    linkPrecedence: LinkPrecedence;
+  } = {
+    linkPrecedence: LinkPrecedence.PRIMARY,
+  };
+
+  if (email) {
+    data.email = email;
   }
+
+  if (phoneNumber) {
+    data.phoneNumber = phoneNumber;
+  }
+
+  newContact = await prisma.contact.create({ data });
+
   if (newContact) {
-    logger.info("New Contact", { newContact: newContact });
+    logger.info("New Contact", { newContact });
     return newContact;
   } else {
     return null;
@@ -235,7 +230,8 @@ export async function identificationService(
 }
 
 export async function getSecondaryContacts(id: number) {
-  await prisma.refresh();
+  await prisma.$disconnect();
+  await prisma.$connect();
   let secondaryContacts = await prisma.contact.findMany({
     where: {
       linkedId: id,
@@ -249,10 +245,10 @@ export async function getSecondaryContacts(id: number) {
 export async function getSecondaryContactsIds(
   secondaryContacts: Contact[]
 ): Promise<number[]> {
-  let secondaryContactIds: number[] = [];
-  secondaryContacts.forEach((contact) => {
-    secondaryContactIds.push(contact.id);
-  });
+  const secondaryContactIds: number[] = secondaryContacts.map(
+    (contact) => contact.id
+  );
+
   return secondaryContactIds;
 }
 
@@ -295,41 +291,40 @@ export async function primarySimilarContactCountCheck(
   similarContacts: Contact[]
 ) {
   let primaryContactArray: Contact[] = [];
-  let primarySimilarContactCount = 0;
-  similarContacts.forEach((contact) => {
-    if (contact.linkPrecedence === LinkPrecedence.PRIMARY) {
-      primarySimilarContactCount++;
-      primaryContactArray.push(contact);
-    }
-  });
+
+  primaryContactArray = similarContacts.filter(
+    (contact) => contact.linkPrecedence === LinkPrecedence.PRIMARY
+  );
+
+  let primarySimilarContactCount = primaryContactArray.length;
 
   logger.info("Primary Similar Contact Count", {
     primarySimilarContactCount: primarySimilarContactCount,
   });
 
   if (primarySimilarContactCount > 1) {
-    let oldestContact = primaryContactArray[0];
-    primaryContactArray.forEach((contact) => {
-      if (contact.createdAt < oldestContact.createdAt) {
-        oldestContact = contact;
-      }
-    });
+    let oldestContact = primaryContactArray.reduce(
+      (oldest, contact) =>
+        contact.createdAt < oldest.createdAt ? contact : oldest,
+      primaryContactArray[0]
+    );
 
     logger.info("Oldest Contact", { oldestContact: oldestContact });
 
-    let tol = primaryContactArray.forEach(async (contact) => {
-      if (contact.id !== oldestContact.id) {
-        await prisma.contact.update({
-          where: {
-            id: contact.id,
-          },
-          data: {
-            linkPrecedence: LinkPrecedence.SECONDARY,
-            linkedId: oldestContact.id,
-          },
-        });
-      }
-    });
-    return tol;
+    await Promise.all(
+      primaryContactArray.map(async (contact) => {
+        if (contact.id !== oldestContact.id) {
+          await prisma.contact.update({
+            where: {
+              id: contact.id,
+            },
+            data: {
+              linkPrecedence: LinkPrecedence.SECONDARY,
+              linkedId: oldestContact.id,
+            },
+          });
+        }
+      })
+    );
   }
 }
