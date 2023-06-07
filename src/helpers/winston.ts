@@ -1,5 +1,6 @@
 import winston from "winston";
-const { combine, timestamp, printf, colorize, align, json } = winston.format;
+const { combine, timestamp, printf, colorize, align, json, cli, prettyPrint } =
+  winston.format;
 
 import { Logtail } from "@logtail/node";
 import { LogtailTransport } from "@logtail/winston";
@@ -9,14 +10,7 @@ const logtail = new Logtail(logtail_token);
 
 const devLogger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
-  format: combine(
-    timestamp({
-      format: "YYYY-MM-DD hh:mm:ss.SSS A",
-    }),
-    align(),
-    colorize(),
-    printf((info) => `[${info.timestamp}] [${info.level}]:${info.message}`)
-  ),
+  format: combine(timestamp(), json(), prettyPrint(), align()),
   transports: [new winston.transports.Console()],
 });
 
