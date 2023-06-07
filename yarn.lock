@@ -2866,6 +2866,11 @@ get-uri@3:
     fs-extra "^8.1.0"
     ftp "^0.3.10"
 
+git-last-commit@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/git-last-commit/-/git-last-commit-1.0.1.tgz#749323f09e8317c2c2878f99eeffff33650c3d57"
+  integrity sha512-FDSgeMqa7GnJDxt/q0AbrxbfeTyxp4ImxEw1e4nw6NUHA5FMhFUq33dTXI4Xdgcj1VQ1q5QLWF6WxFrJ8KCBOg==
+
 git-node-fs@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/git-node-fs/-/git-node-fs-1.0.0.tgz#49b215e242ebe43aa4c7561bbba499521752080f"
