@@ -2,153 +2,37 @@ import { Contact, LinkPrecedence } from "@prisma/client";
 import { prisma } from "../helpers/prisma";
 import { ContactResponseBody } from "../helpers/interfaces";
 import { logger } from "../helpers/winston";
-
-export async function createNewContact(email?: string, phoneNumber?: string) {
-  let newContact: Contact | null = null;
-
-  const data: {
-    email?: string;
-    phoneNumber?: string;
-    linkPrecedence: LinkPrecedence;
-  } = {
-    linkPrecedence: LinkPrecedence.PRIMARY,
-  };
-
-  if (email) {
-    data.email = email;
-  }
-
-  if (phoneNumber) {
-    data.phoneNumber = phoneNumber;
-  }
-
-  newContact = await prisma.contact.create({ data });
-
-  if (newContact) {
-    logger.info("New Contact", { newContact });
-    return newContact;
-  } else {
-    return null;
-  }
-}
-
-export async function getPrimaryContactFromEmail(
-  email: string
-): Promise<Contact | null> {
-  let contact = await prisma.contact.findFirst({
-    where: {
-      email: email,
-      linkPrecedence: LinkPrecedence.PRIMARY,
-    },
-  });
-
-  return contact;
-}
-
-export async function getPrimaryContactFromPhoneNumber(
-  phoneNumber: string
-): Promise<Contact | null> {
-  let contact = await prisma.contact.findFirst({
-    where: {
-      phoneNumber: phoneNumber,
-      linkPrecedence: LinkPrecedence.PRIMARY,
-    },
-  });
-  return contact;
-}
-
-export async function getPrimaryContactFromEmailAndPhoneNumber(
-  email: string,
-  phoneNumber: string
-): Promise<Contact | null> {
-  let primaryContact: Contact | null = null;
-  let primaryEmail = await getPrimaryContactFromEmail(email);
-
-  logger.info("EP - From Email", { primaryEmail: primaryEmail });
-  if (!primaryEmail) {
-    let primaryPhoneNumber = await getPrimaryContactFromPhoneNumber(
-      phoneNumber
-    );
-    if (!primaryPhoneNumber) {
-      return primaryContact;
-    } else {
-      primaryContact = primaryPhoneNumber;
-      return primaryContact;
-    }
-  } else {
-    primaryContact = primaryEmail;
-  }
-  return primaryContact;
-}
-
-export async function getContactResponseBody(id: number) {
-  let contact = await prisma.contact.findUnique({
-    where: {
-      id: id,
-    },
-  });
-
-  if (!contact) {
-    throw new Error(`Contact with ID ${id} not found`);
-  }
-  let secondaryContacts = await getSecondaryContacts(id);
-
-  let contactResponseBody: ContactResponseBody = {
-    primaryContactId: contact.id,
-    emails: contact.email ? [contact.email] : [],
-    phoneNumbers: contact.phoneNumber ? [contact.phoneNumber] : [],
-    secondaryContactIds: await getSecondaryContactsIds(secondaryContacts),
-  };
-  return contactResponseBody;
-}
-
-export async function getSimilarContacts(email?: string, phoneNumber?: string) {
-  let similarContacts: Contact[] = [];
-  if (email && phoneNumber) {
-    similarContacts = await prisma.contact.findMany({
-      where: {
-        OR: [
-          {
-            email: email,
-          },
-          {
-            phoneNumber: phoneNumber,
-          },
-        ],
-      },
-    });
-  } else if (email && !phoneNumber) {
-    similarContacts = await prisma.contact.findMany({
-      where: {
-        email: email,
-      },
-    });
-  } else if (!email && phoneNumber) {
-    similarContacts = await prisma.contact.findMany({
-      where: {
-        phoneNumber: phoneNumber,
-      },
-    });
-  } else {
-    return null;
-  }
-  return similarContacts;
-}
+import {
+  createNewContact,
+  getSimilarContacts,
+  primarySimilarContactCountCheck,
+  getPrimaryContactFromEmailAndPhoneNumber,
+  getSecondaryContacts,
+  getEmails,
+  getPhoneNumbers,
+  getSecondaryContactsIds,
+  getContactResponseBody,
+} from "./contact";
 
 export async function identificationService(
   email?: string,
   phoneNumber?: string
 ): Promise<ContactResponseBody | null> {
+  // create new contact for incoming email and phone number
   let newContact = await createNewContact(email, phoneNumber);
+
+  // Check if there are any similar contacts
   let similarContacts = await getSimilarContacts(email, phoneNumber);
 
-  logger.info("Similar Contacts", { similarContacts: similarContacts });
+  logger.info("Similar Contacts Length", {
+    similarContactsLength: similarContacts?.length,
+  });
 
   if (!similarContacts) {
     return null;
   }
-
-  if (similarContacts.length == 0) {
+  // If only 1 similar contact, that means the contact was just created.
+  if (similarContacts.length == 1) {
     if (newContact) {
       let emails: string[] = [];
       let phoneNumbers: string[] = [];
@@ -173,25 +57,18 @@ export async function identificationService(
     }
   }
 
+  // Check if other primary contacts have same email or phone number and if so, change primary contact to the oldest one
+  // and also shift the old secondary contacts to new one
   await primarySimilarContactCountCheck(similarContacts);
   let primaryContact: Contact | null = null;
   let secondaryContacts: Contact[] | null;
-  if (email && phoneNumber) {
-    primaryContact = await getPrimaryContactFromEmailAndPhoneNumber(
-      email,
-      phoneNumber
-    );
 
-    logger.info("Primary Contact E P", { primaryContact: primaryContact });
-  } else if (email) {
-    primaryContact = await getPrimaryContactFromEmail(email);
+  primaryContact = await getPrimaryContactFromEmailAndPhoneNumber(
+    email,
+    phoneNumber
+  );
 
-    logger.info("Primary Contact E", { primaryContact: primaryContact });
-  } else if (phoneNumber) {
-    primaryContact = await getPrimaryContactFromPhoneNumber(phoneNumber);
-
-    logger.info("Primary Contact P", { primaryContact: primaryContact });
-  }
+  logger.info("Primary Contact E P", { primaryContact: primaryContact });
 
   if (primaryContact) {
     secondaryContacts = await getSecondaryContacts(primaryContact.id);
@@ -226,105 +103,5 @@ export async function identificationService(
       phoneNumber: phoneNumber,
     });
     return null;
-  }
-}
-
-export async function getSecondaryContacts(id: number) {
-  await prisma.$disconnect();
-  await prisma.$connect();
-  let secondaryContacts = await prisma.contact.findMany({
-    where: {
-      linkedId: id,
-      linkPrecedence: LinkPrecedence.SECONDARY,
-    },
-  });
-
-  return secondaryContacts;
-}
-
-export async function getSecondaryContactsIds(
-  secondaryContacts: Contact[]
-): Promise<number[]> {
-  const secondaryContactIds: number[] = secondaryContacts.map(
-    (contact) => contact.id
-  );
-
-  return secondaryContactIds;
-}
-
-export async function getEmails(
-  primaryContact: Contact,
-  secondaryContacts: Contact[]
-): Promise<string[]> {
-  let emails: string[] = [];
-  if (primaryContact.email) {
-    emails.push(primaryContact.email);
-  }
-  secondaryContacts.forEach((contact) => {
-    if (contact.email) {
-      emails.push(contact.email);
-    }
-  });
-  emails = [...new Set(emails)];
-
-  return emails;
-}
-
-export async function getPhoneNumbers(
-  primaryContact: Contact,
-  secondaryContacts: Contact[]
-): Promise<string[]> {
-  let phoneNumbers: string[] = [];
-  if (primaryContact.phoneNumber) {
-    phoneNumbers.push(primaryContact.phoneNumber);
-  }
-  secondaryContacts.forEach((contact) => {
-    if (contact.phoneNumber) {
-      phoneNumbers.push(contact.phoneNumber);
-    }
-  });
-  phoneNumbers = [...new Set(phoneNumbers)];
-  return phoneNumbers;
-}
-
-export async function primarySimilarContactCountCheck(
-  similarContacts: Contact[]
-) {
-  let primaryContactArray: Contact[] = [];
-
-  primaryContactArray = similarContacts.filter(
-    (contact) => contact.linkPrecedence === LinkPrecedence.PRIMARY
-  );
-
-  let primarySimilarContactCount = primaryContactArray.length;
-
-  logger.info("Primary Similar Contact Count", {
-    primarySimilarContactCount: primarySimilarContactCount,
-  });
-
-  if (primarySimilarContactCount > 1) {
-    let oldestContact = primaryContactArray.reduce(
-      (oldest, contact) =>
-        contact.createdAt < oldest.createdAt ? contact : oldest,
-      primaryContactArray[0]
-    );
-
-    logger.info("Oldest Contact", { oldestContact: oldestContact });
-
-    await Promise.all(
-      primaryContactArray.map(async (contact) => {
-        if (contact.id !== oldestContact.id) {
-          await prisma.contact.update({
-            where: {
-              id: contact.id,
-            },
-            data: {
-              linkPrecedence: LinkPrecedence.SECONDARY,
-              linkedId: oldestContact.id,
-            },
-          });
-        }
-      })
-    );
   }
 }
