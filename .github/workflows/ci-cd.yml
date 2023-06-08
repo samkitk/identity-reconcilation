@@ -21,12 +21,6 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Path of current directory
-        run: pwd
-
-      - name: List All Files
-        run: ls -a
-
       - name: Create .env file
         run: |
           echo "NODE_ENV=${{ secrets.NODE_ENV }}" >> .env
@@ -36,12 +30,6 @@ jobs:
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
           echo "REDIS_CONNECTION_URL=${{ secrets.REDIS_CONNECTION_URL }}" >> .env
           echo "TEST_WORKING=yes" >> .env
-
-      - name: List All Files
-        run: ls -a
-
-      - name: List .env file
-        run: cat .env
 
       - name: Build application
         run: yarn build
