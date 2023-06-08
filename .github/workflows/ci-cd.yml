@@ -27,9 +27,6 @@ jobs:
       - name: List All Files
         run: ls -a
 
-      - name: Change to Correct Directory
-        run: cd /identity-reconcilation
-
       - name: Create .env file
         run: |
           echo "NODE_ENV=${{ secrets.NODE_ENV }}" >> .env
