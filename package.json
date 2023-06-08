@@ -43,6 +43,7 @@
     "dev": "tsc-watch --noClear --onSuccess \"node -r dotenv/config lib/app.js\"",
     "precommit": "yarn format",
     "deploy": "yarn pm2 start \"yarn start\" --name api --watch",
+    "restart": "yarn pm2 restart api",
     "hard-reload": "yarn hard-stop && yarn deploy",
     "hard-stop": "yarn pm2 stop api && yarn pm2 delete api"
   },
