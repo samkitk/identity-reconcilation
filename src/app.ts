@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.post("/identify", rateLimitMiddleware(4, 20), async (req, res) => {
+app.post("/identify", rateLimitMiddleware(5, 20), async (req, res) => {
   let { email, phoneNumber } = req.body;
 
   if (!email && !phoneNumber) {
@@ -35,14 +35,12 @@ app.post("/identify", rateLimitMiddleware(4, 20), async (req, res) => {
   if (phoneNumber && typeof phoneNumber === "number") {
     phoneNumber = phoneNumber.toString();
   }
-  console.log("****************");
 
   logger.info("Processing Data", { email: email, phoneNumber: phoneNumber });
 
   try {
     let response = await identificationService(email, phoneNumber);
     logger.info("--Response--", { response: response });
-    console.log("**************");
     return res.status(200).json({ contact: response });
   } catch (error: any) {
     logger.error("Error in Identifying", {
