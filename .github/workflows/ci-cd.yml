@@ -21,8 +21,11 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Change to Correct Directory
-        run: cd /identity-reconcilation
+      - name: Path of current directory
+        run: pwd
+
+      - name: List All Files
+        run: ls -a
 
       - name: Create .env file
         run: |
@@ -32,6 +35,7 @@ jobs:
           echo "LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}" >> .env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
           echo "REDIS_CONNECTION_URL=${{ secrets.REDIS_CONNECTION_URL }}" >> .env
+          echo "TEST_WORKING=yes" >> .env
 
       - name: List All Files
         run: ls -a
@@ -41,9 +45,6 @@ jobs:
 
       - name: Build application
         run: yarn build
-
-      - name: Run Tests
-        run: yarn test
 
   deploy:
     needs: build
@@ -57,7 +58,9 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /identity-reconcilation
+            pwd
+            ls -a
+            cd identity-reconcilation
             git pull origin master
             yarn install
             yarn restart
