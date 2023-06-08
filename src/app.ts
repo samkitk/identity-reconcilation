@@ -1,19 +1,16 @@
-import express, { response } from "express";
+import express from "express";
 import { logger } from "./helpers/winston";
 import { host_environment, server_port } from "./helpers/environment";
 import git from "git-last-commit";
-import {
-  createNewContact,
-  getSimilarContacts,
-  identificationService,
-} from "./identity/identity";
+import { identificationService } from "./identity/identity";
 import { validateEmail } from "./helpers/validator";
+import { rateLimitMiddleware } from "./middleware/ratelimit";
 
 const app = express();
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  git.getLastCommit((err, commit) => {
+  git.getLastCommit(async (err, commit) => {
     if (err) {
       logger.log("error", err);
       return res.send("Hello World!");
@@ -22,7 +19,7 @@ app.get("/", (req, res) => {
   });
 });
 
-app.post("/identify", async (req, res) => {
+app.post("/identify", rateLimitMiddleware(4, 20), async (req, res) => {
   let { email, phoneNumber } = req.body;
 
   if (!email && !phoneNumber) {
@@ -35,16 +32,17 @@ app.post("/identify", async (req, res) => {
     return res.status(400).send({ error: "Invalid email" });
   }
 
-  // if phonenumber is int then convert to string
-
   if (phoneNumber && typeof phoneNumber === "number") {
     phoneNumber = phoneNumber.toString();
   }
+  console.log("****************");
 
   logger.info("Processing Data", { email: email, phoneNumber: phoneNumber });
 
   try {
     let response = await identificationService(email, phoneNumber);
+    logger.info("--Response--", { response: response });
+    console.log("**************");
     return res.status(200).json({ contact: response });
   } catch (error: any) {
     logger.error("Error in Identifying", {
