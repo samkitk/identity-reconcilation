@@ -58,7 +58,9 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /identity-reconcilation
+            pwd
+            ls -a
+            cd identity-reconcilation
             git pull origin master
             yarn install
             yarn restart
