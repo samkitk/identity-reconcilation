@@ -71,6 +71,7 @@ export async function identificationService(
   logger.info("Primary Contact E P", { primaryContact: primaryContact });
 
   if (primaryContact) {
+    // Get secondary contacts
     secondaryContacts = await getSecondaryContacts(primaryContact.id);
 
     logger.info("Secondary Contacts", { secondaryContacts: secondaryContacts });
@@ -84,6 +85,7 @@ export async function identificationService(
       let secondaryContactIds = await getSecondaryContactsIds(
         secondaryContacts
       );
+      // Return response body
       let contactResponseBody: ContactResponseBody = {
         primaryContactId: primaryContact.id,
         emails: emails,

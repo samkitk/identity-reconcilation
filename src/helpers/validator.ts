@@ -4,3 +4,8 @@ export async function validateEmail(email: string) {
   );
   return emailRegex.test(email);
 }
+
+export async function validatePhoneNumberDigits(phoneNumber: string) {
+  const phoneNumberRegex = new RegExp("^[0-9]+$");
+  return phoneNumberRegex.test(phoneNumber);
+}
