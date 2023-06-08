@@ -21,6 +21,9 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Change to Correct Directory
+        run: cd /identity-reconcilation
+
       - name: Create .env file
         run: |
           echo "NODE_ENV=${{ secrets.NODE_ENV }}" >> .env
@@ -29,6 +32,12 @@ jobs:
           echo "LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}" >> .env
           echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
           echo "REDIS_CONNECTION_URL=${{ secrets.REDIS_CONNECTION_URL }}" >> .env
+
+      - name: List All Files
+        run: ls -a
+
+      - name: List .env file
+        run: cat .env
 
       - name: Build application
         run: yarn build
