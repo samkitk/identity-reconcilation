@@ -31,17 +31,13 @@ app.post("/identify", rateLimitMiddleware(5, 20), async (req, res) => {
       .send({ error: "Must provide either email or phone number" });
   }
 
-  if (typeof email !== "string" || typeof phoneNumber !== "string") {
-    return res
-      .status(400)
-      .send({ error: "Must provide both email and phone number in string" });
+  let is_email_valid = await validateEmail(email);
+
+  if (phoneNumber && typeof phoneNumber !== "string") {
+    phoneNumber = phoneNumber.toString();
   }
 
-  let is_email_valid = await validateEmail(email);
-  console.log("TEST TEST", is_email_valid);
-
   let is_phone_valid = await validatePhoneNumberDigits(phoneNumber);
-  console.log("MEST MEST", is_phone_valid);
 
   if (email && !is_email_valid) {
     return res.status(400).send({ error: "Invalid email" });
@@ -51,7 +47,10 @@ app.post("/identify", rateLimitMiddleware(5, 20), async (req, res) => {
     return res.status(400).send({ error: "Invalid phone number" });
   }
 
-  logger.info("Processing Data", { email: email, phoneNumber: phoneNumber });
+  logger.info("Request Received - Processing Data", {
+    email: email,
+    phoneNumber: phoneNumber,
+  });
 
   try {
     let response = await identificationService(email, phoneNumber);

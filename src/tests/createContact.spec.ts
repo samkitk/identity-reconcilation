@@ -1,4 +1,4 @@
-import { createNewContact } from "../src/identity/contact";
+import { createNewContact } from "../identity/contact";
 
 test("createNewContact should create a new contact", async () => {
   const newContact = await createNewContact("test@example.com", "1234567890");

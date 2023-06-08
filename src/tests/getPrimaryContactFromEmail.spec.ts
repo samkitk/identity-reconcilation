@@ -1,4 +1,4 @@
-import { getPrimaryContactFromEmailAndPhoneNumber } from "../src/identity/contact";
+import { getPrimaryContactFromEmailAndPhoneNumber } from "../identity/contact";
 
 test("getPrimaryContactFromEmail should retrieve the primary contact with the given email", async () => {
   const contact = await getPrimaryContactFromEmailAndPhoneNumber(
