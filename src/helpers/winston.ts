@@ -10,7 +10,7 @@ const logtail = new Logtail(logtail_token);
 
 const devLogger = winston.createLogger({
   level: process.env.LOG_LEVEL || "info",
-  format: combine(timestamp(), json(), prettyPrint(), align()),
+  format: combine(timestamp(), json(), align()),
   transports: [new winston.transports.Console()],
 });
 
