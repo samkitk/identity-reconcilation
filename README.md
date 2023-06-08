@@ -9,10 +9,31 @@ The application is hosted at http://139.59.85.184:3000
 
 It accepts POST Request at http://139.59.85.184:3000/identify with the following body:
 
+Either or both fields are accepted.
+
 ```json
 {
   "email": "valid@email.com",
   "phone": "stringofnumbers"
+}
+```
+
+The response looks something like this
+
+```json
+{
+  "contact": {
+    "primaryContactId": 1,
+    "emails": [
+      "personA@gmail.com",
+      "personA1@gmail.com",
+      "personA2@gmail.com",
+      "personA3@gmail.com",
+      "samepersonA@gmail.com"
+    ],
+    "phoneNumbers": ["9409xxx234", "9824xxx828", "9824xxx389"],
+    "secondaryContactIds": [2, 3, 4, 7, 5, 6]
+  }
 }
 ```
 
@@ -79,7 +100,7 @@ yarn test
 
 - Logging with Winston and LogTail: The project incorporates the Winston logger library to handle logging. The production logs are streamed in real-time to LogTail, providing convenient and centralized log management.
 
--Contact Reconciliation: When two primary contacts merge into one primary contact and one secondary contact, the project automatically migrates the respective secondary contacts of the old primary contact to point towards the new primary contact. This ensures data consistency and maintains accurate relationships between contacts.
+- Contact Reconciliation: When two primary contacts merge into one primary contact and one secondary contact, the project automatically migrates the respective secondary contacts of the old primary contact to point towards the new primary contact. This ensures data consistency and maintains accurate relationships between contacts.
 
 - Modularity, Type Safety, and Asynchronicity: The codebase emphasizes modularity, type safety, and asynchronous programming. The use of TypeScript enables static type checking, reducing the likelihood of runtime errors. Asynchronous operations are employed to enhance performance and responsiveness.
 
