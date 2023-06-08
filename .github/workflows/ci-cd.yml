@@ -21,6 +21,12 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Path of current directory
+        run: pwd
+
+      - name: List All Files
+        run: ls -a
+
       - name: Change to Correct Directory
         run: cd /identity-reconcilation
 
