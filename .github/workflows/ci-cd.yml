@@ -21,6 +21,15 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Create .env file
+        run: |
+          echo "NODE_ENV=${{ secrets.NODE_ENV }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "LOG_LEVEL=${{secrets.LOG_LEVEL }}" >> .env
+          echo "LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}" >> .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "REDIS_CONNECTION_URL=${{ secrets.REDIS_CONNECTION_URL }}" >> .env
+
       - name: Build application
         run: yarn build
 
