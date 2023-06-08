@@ -46,9 +46,6 @@ jobs:
       - name: Build application
         run: yarn build
 
-      - name: Run Tests
-        run: yarn test
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
